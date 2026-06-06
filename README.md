@@ -4,7 +4,7 @@
 
 这是一个基于 Web 的文字冒险游戏，模拟了人从呱呱坠地到生老病死的完整一生。在这里，你可以选择成为商界巨鳄、艺术大师、体育明星，或是回归田园的隐士。每一次选择，都会改变你的人生轨迹。
 
-[**在线游玩 (点击这里)**](https://yourusername.github.io/BITLIFE) *(注：部署后替换链接)*
+[**在线游玩 (点击这里)**]( https://rgbrgb111.github.io/BITLIFE/) 
 
 ---
 
@@ -29,7 +29,7 @@
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/yourusername/BITLIFE.git
+git clone https://github.com/rgbrgb111/BITLIFE.git
 cd BITLIFE
 
 # 2. 使用 Python 快速启动 (需安装 Python)
