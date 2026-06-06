@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>人生模拟器 · 命运之书</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', 'Noto Serif SC', '楷体', KaiTi, serif;
+      background: #1e1b18;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      transition: background 0.6s ease;
+    }
+    body.infant { background: #f9e6cf; }
+    body.childhood { background: #d4eac8; }
+    body.teen { background: #c8dae0; }
+    body.young_adult { background: #a0c4e2; }
+    body.adult { background: #e2d5c1; }
+    body.middle_age { background: #e0cfa3; }
+    body.older { background: #d9c2a8; }
+    body.elder { background: #c4a98e; }
+    body.ending-bg { background: #2c2416; }
+    .game-container {
+      width: 100%;
+      max-width: 750px;
+      background: rgba(255,250,245,0.9);
+      backdrop-filter: blur(20px);
+      border-radius: 40px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.6);
+      padding: 25px 20px;
+      transition: all 0.4s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .save-bar { display: flex; justify-content: flex-end; gap: 10px; }
+    .save-btn, .load-btn {
+      background: rgba(255,255,240,0.8); border: 1px solid #c9b78b;
+      padding: 8px 16px; border-radius: 20px; cursor: pointer;
+      font-size: 0.85rem; font-weight: 600; color: #4a3e2c; transition: 0.2s;
+    }
+    .save-btn:hover, .load-btn:hover { background: #f3e8d7; border-color: #b2976a; }
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(255,255,240,0.7); border-radius: 100px; padding: 12px 25px;
+    }
+    .identity { display: flex; align-items: center; gap: 12px; }
+    .avatar { font-size: 32px; background: #fff; border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; }
+    .char-name { font-weight: 700; font-size: 1.3rem; color: #3e362e; }
+    .age-stage { font-size: 0.85rem; color: #7b6e5e; display: flex; gap: 6px; }
+    .talent-badge { background: #e8d9b5; padding: 5px 15px; border-radius: 30px; font-size: 0.85rem; font-weight: 600; color: #4a3f2e; }
+    .attributes {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      background: rgba(255,250,240,0.8); border-radius: 30px; padding: 18px 20px;
+    }
+    .attr-item { display: flex; flex-direction: column; gap: 4px; }
+    .attr-label { font-size: 0.8rem; font-weight: 600; color: #5b4f3c; }
+    .attr-bar { height: 8px; background: #e2d9cc; border-radius: 20px; overflow: hidden; }
+    .attr-fill { height: 100%; border-radius: 20px; transition: width 0.5s; background: #b99e6b; }
+    .attr-value { font-size: 0.75rem; font-weight: 700; color: #3e362e; align-self: flex-end; }
+    .story-card {
+      background: #fffef7; border-radius: 35px; padding: 30px 25px;
+      box-shadow: 0 20px 35px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 20px;
+      animation: fadeSlide 0.5s ease;
+    }
+    @keyframes fadeSlide { 0% { opacity: 0; transform: translateY(15px); } 100% { opacity: 1; transform: translateY(0); } }
+    .stage-tag { font-size: 0.9rem; background: #f1e7d6; align-self: flex-start; padding: 6px 20px; border-radius: 30px; color: #5f4e32; font-weight: 600; }
+    .narrative { font-size: 1.2rem; line-height: 1.7; color: #2e241a; }
+    .options { display: flex; flex-direction: column; gap: 12px; margin-top: 5px; }
+    .option-btn {
+      background: #faf7f2; border: 2px solid #d6c9b3; padding: 14px 20px; border-radius: 25px;
+      font-size: 1rem; font-weight: 500; color: #3c3328; cursor: pointer; transition: all 0.2s;
+      text-align: left; display: flex; align-items: center; gap: 12px; background: #fffbf5;
+    }
+    .option-btn:hover { background: #f3e8d7; border-color: #b2976a; transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,0.08); }
+    .option-icon { font-size: 1.4rem; }
+    .talent-selection { text-align: center; }
+    .talent-title { font-size: 2rem; font-weight: 700; color: #4a3822; }
+    .talent-cards { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+    .talent-card {
+      background: #fffbf2; border: 2px solid #dac29c; border-radius: 25px; padding: 20px 15px;
+      width: 180px; cursor: pointer; transition: 0.2s; text-align: center; box-shadow: 0 5px 12px rgba(0,0,0,0.05);
+    }
+    .talent-card:hover { transform: translateY(-6px); border-color: #b3925c; box-shadow: 0 18px 25px rgba(0,0,0,0.12); }
+    .talent-icon { font-size: 40px; }
+    .talent-name { font-weight: 700; margin: 8px 0 4px; color: #4e3b28; }
+    .talent-desc { font-size: 0.8rem; color: #6b5d4b; }
+    .ending-panel { text-align: center; padding: 20px; }
+    .ending-title { font-size: 2.5rem; font-weight: 700; color: #d4af37; margin-bottom: 15px; }
+    .ending-summary { font-size: 1.2rem; color: #e3d5c0; line-height: 1.8; background: rgba(0,0,0,0.4); border-radius: 30px; padding: 25px; margin: 20px 0; }
+    .final-attributes { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin: 20px 0; color: #d4c099; }
+    .restart-btn { background: #d4af37; border: none; color: #1e1b18; font-weight: bold; padding: 14px 35px; border-radius: 40px; font-size: 1.1rem; cursor: pointer; margin-top: 15px; }
+    .restart-btn:hover { background: #e6c454; }
+    @media (max-width: 500px) { .attributes { grid-template-columns: repeat(2, 1fr); } .talent-cards { flex-direction: column; align-items: center; } }
+  </style>
+</head>
+<body class="infant">
+<div class="game-container" id="app"></div>
+
+<script>
+  (function() {
+    // ---------- 游戏状态 ----------
+    const state = {
+      name: "你",
+      age: 0,
+      stage: "命运之初",
+      talent: null,
+      attr: {
+        intelligence: 20, charm: 20, wealth: 20, health: 30, happiness: 30, morality: 25
+      },
+      eventId: "talent_select",
+      flags: {},
+      pendingNext: null
+    };
+    const attrNames = { intelligence:"智力", charm:"魅力", wealth:"财富", health:"健康", happiness:"幸福", morality:"道德" };
+    const attrIcons = { intelligence:"🧠", charm:"✨", wealth:"💰", health:"❤️", happiness:"😊", morality:"⚖️" };
+
+    // 天赋池
+    const talents = [
+      { id:"smart", name:"天生聪慧", icon:"🧠", desc:"智力+15", effects:{intelligence:15}, flag:"smart" },
+      { id:"charming", name:"魅力四射", icon:"✨", desc:"魅力+15", effects:{charm:15}, flag:"charming" },
+      { id:"rich", name:"家境殷实", icon:"💰", desc:"财富+20", effects:{wealth:20}, flag:"rich" },
+      { id:"athletic", name:"运动健将", icon:"💪", desc:"健康+15", effects:{health:15}, flag:"athletic" },
+      { id:"optimist", name:"乐天派", icon:"😊", desc:"幸福+15", effects:{happiness:15}, flag:"optimist" },
+      { id:"virtuous", name:"道德楷模", icon:"⚖️", desc:"道德+15", effects:{morality:15}, flag:"virtuous" },
+      { id:"lucky", name:"幸运之星", icon:"🍀", desc:"随机好事概率提升", effects:{}, flag:"lucky" },
+      { id:"artist", name:"艺术细胞", icon:"🎨", desc:"解锁艺术特殊事件", effects:{charm:5, happiness:5}, flag:"artist" }
+    ];
+
+    // 随机事件
+    const randomEvents = [
+      { id:"random_lottery", desc:"你随手买了张彩票，竟然中了一笔小奖！", effects:{wealth:5, happiness:3}, stage:"偶然事件" },
+      { id:"random_flu", desc:"一场流感让你卧床一周，健康受损。", effects:{health:-4, happiness:-2}, stage:"偶然事件" },
+      { id:"random_mentor", desc:"你遇到了一位良师益友，指点迷津。", effects:{intelligence:3, morality:2}, stage:"偶然事件" },
+      { id:"random_friend", desc:"老朋友突然来访，回忆往昔，心情愉悦。", effects:{happiness:4, charm:1}, stage:"偶然事件" },
+      { id:"random_donation", desc:"你收到一笔意外的遗产捐赠。", effects:{wealth:6}, stage:"偶然事件" },
+      { id:"random_accident", desc:"一次小意外让你受了轻伤，休养了几个月。", effects:{health:-5, wealth:-2}, stage:"偶然事件" },
+      { id:"random_inspiration", desc:"某天你突然灵感迸发，解决了一个长期难题。", effects:{intelligence:4, happiness:2}, stage:"偶然事件" }
+    ];
+
+    // ---------- 事件库 (大幅扩展中老年) ----------
+    const events = {
+      "talent_select": { stage:"命运之初", desc:"在开启人生之前，命运赐予你一项独特天赋。请选择你的起点。", isTalentSelect:true },
+
+      "infant_start": { stage:"婴幼期 (0-6岁)", desc:"你出生在一个普通但温馨的家庭。父母看着襁褓中的你，满怀期待。", ageIncrease:6, options:[
+        { text:"安静观察世界", effects:{intelligence:3, happiness:-2}, next:"childhood_intro" },
+        { text:"活泼好动，探索一切", effects:{health:3, charm:2}, next:"childhood_intro" }
+      ]},
+
+      "childhood_intro": { stage:"童年 (7-12岁)", desc:"你步入小学，对世界充满好奇。", ageIncrease:5, options:[
+        { text:"沉浸在书本与故事中", effects:{intelligence:5, charm:-1}, next:"child_event2" },
+        { text:"和伙伴们在外面疯跑", effects:{health:4, happiness:3}, next:"child_event2" },
+        { text:"学习一门乐器或画画", effects:{charm:4, happiness:2, intelligence:1}, next:"child_event2" }
+      ]},
+      "child_event2": { stage:"童年", desc:"一次学校活动中，你面临一个选择。", ageIncrease:3, options:[
+        { text:"自信地登上演讲台", effects:{charm:4, intelligence:2}, next: ()=> state.attr.intelligence>35 ? "teen_scholar" : "teen_normal" },
+        { text:"埋头做有趣的实验", effects:{intelligence:5, morality:1}, next: ()=> state.attr.intelligence>35 ? "teen_scholar" : "teen_normal" }
+      ]},
+
+      "teen_scholar": { stage:"青春期 (13-17岁)", desc:"中学时代，你已是小有名气的学霸。", ageIncrease:4, options:[
+        { text:"全心备战升学", effects:{intelligence:6, happiness:-3, morality:1}, next:"young_college_path" },
+        { text:"偷偷参加校园乐队", effects:{charm:5, happiness:4, intelligence:-2}, next: ()=> state.talent?.flag==="artist" ? "young_artist_path" : "young_mixed" }
+      ]},
+      "teen_normal": { stage:"青春期 (13-17岁)", desc:"成绩中规中矩，但朋友很多。", ageIncrease:4, options:[
+        { text:"发奋努力", effects:{intelligence:5, happiness:-2}, next:"young_college_path" },
+        { text:"发展体育特长", effects:{health:5, charm:2}, next: ()=> state.talent?.flag==="athletic" ? "young_sports_path" : "young_work_early" }
+      ]},
+
+      "young_college_path": { stage:"青年早期 (18-22岁)", desc:"选择专业。", ageIncrease:4, options:[
+        { text:"计算机", effects:{intelligence:4, wealth:5}, next:"young_career_tech" },
+        { text:"医学", effects:{morality:5, intelligence:3}, next:"young_career_doctor" },
+        { text:"哲学与文学", effects:{happiness:4, charm:3}, next:"young_career_writer" }
+      ]},
+      "young_artist_path": { stage:"青年早期", desc:"艺术学院深造。", ageIncrease:4, options:[
+        { text:"专攻绘画", effects:{charm:5, happiness:5, wealth:-2}, next:"young_career_artist" },
+        { text:"选择设计", effects:{wealth:4, intelligence:2}, next:"young_career_design" }
+      ]},
+      "young_mixed": { stage:"青年早期", desc:"社会经验丰富。", ageIncrease:4, options:[
+        { text:"直接工作", effects:{wealth:5, health:2}, next:"young_work_early" },
+        { text:"尝试创业", effects:{wealth:6, happiness:2, morality:-1}, next:"young_biz" }
+      ]},
+      "young_sports_path": { stage:"青年早期", desc:"青年运动员。", ageIncrease:4, options:[
+        { text:"冲击职业", effects:{health:-2, wealth:5, happiness:2}, next:"adult_athlete" },
+        { text:"转为教练", effects:{health:2, charm:2}, next:"adult_coach" }
+      ]},
+      "young_work_early": { stage:"青年早期", desc:"从基层做起。", ageIncrease:4, options:[
+        { text:"踏实工作", effects:{wealth:4, intelligence:2}, next:"adult_worker" },
+        { text:"尝试销售", effects:{charm:3, wealth:5}, next:"adult_sales" }
+      ]},
+
+      "young_career_tech": { stage:"青年 (23-30岁)", desc:"程序员，高风险项目。", ageIncrease:7, options:[
+        { text:"全力投入", effects:{wealth:8, health:-3, happiness:-2}, next:"middle_tech_lead" },
+        { text:"跳槽初创", effects:{wealth:6, happiness:3}, next:"middle_startup" }
+      ]},
+      "young_career_doctor": { stage:"青年", desc:"住院医师，支援机会。", ageIncrease:7, options:[
+        { text:"毅然前往", effects:{morality:8, happiness:3, wealth:-2}, next:"middle_doctor_noble" },
+        { text:"留在大医院", effects:{wealth:6, morality:-1}, next:"middle_doctor_city" }
+      ]},
+      "young_career_writer": { stage:"青年", desc:"第一部长篇，经济拮据。", ageIncrease:7, options:[
+        { text:"坚持纯文学", effects:{happiness:4, charm:3, wealth:-3}, next:"middle_writer_pure" },
+        { text:"写商业剧本", effects:{wealth:5, charm:2}, next:"middle_writer_commercial" }
+      ]},
+      "young_career_artist": { stage:"青年", desc:"风格未被接受。", ageIncrease:7, options:[
+        { text:"坚持自我", effects:{happiness:5, morality:2, wealth:-2}, next:"middle_artist_pure" },
+        { text:"适当妥协", effects:{wealth:5, charm:3}, next:"middle_artist_commercial" }
+      ]},
+      "young_career_design": { stage:"青年", desc:"UI设计师。", ageIncrease:7, options:[
+        { text:"深耕设计", effects:{charm:4, happiness:3}, next:"middle_designer" },
+        { text:"转向管理", effects:{wealth:6, intelligence:2}, next:"middle_manager" }
+      ]},
+      "young_biz": { stage:"青年", desc:"小生意起色。", ageIncrease:7, options:[
+        { text:"冒险扩张", effects:{wealth:8, health:-2}, next:"middle_biz_boom" },
+        { text:"稳健发展", effects:{wealth:4, happiness:2}, next:"middle_biz_stable" }
+      ]},
+      "adult_athlete": { stage:"青年", desc:"旧伤复发。", ageIncrease:7, options:[
+        { text:"打封闭坚持", effects:{wealth:6, health:-5, happiness:-1}, next:"middle_athlete_hurt" },
+        { text:"提前退役", effects:{health:1, intelligence:2}, next:"middle_retire_early" }
+      ]},
+      "adult_coach": { stage:"青年", desc:"年轻教练。", ageIncrease:7, options:[
+        { text:"专注青训", effects:{morality:3, happiness:3}, next:"middle_coach" },
+        { text:"争取职业队", effects:{wealth:4, charm:2}, next:"middle_coach_pro" }
+      ]},
+      "adult_worker": { stage:"青年", desc:"熟练技工。", ageIncrease:7, options:[
+        { text:"考取高级证书", effects:{intelligence:3, wealth:3}, next:"middle_worker_skilled" },
+        { text:"合伙开店", effects:{wealth:5, charm:2}, next:"middle_shop" }
+      ]},
+      "adult_sales": { stage:"青年", desc:"销售突出。", ageIncrease:7, options:[
+        { text:"跳槽高薪", effects:{wealth:7, happiness:1}, next:"middle_sales_manager" },
+        { text:"争取股份", effects:{wealth:5, morality:2}, next:"middle_loyal" }
+      ]},
+
+      // 中年事件 (大多保持原样，但部分已添加分支)
+      "middle_tech_lead": { stage:"中年 (31-50岁)", desc:"技术总监，身体报警。", ageIncrease:19, options:[
+        { text:"重视健康", effects:{health:5, happiness:2}, next:"older_balance" },
+        { text:"继续拼搏", effects:{wealth:10, health:-5}, next:"older_rich_health_low" }
+      ]},
+      "middle_startup": { stage:"中年", desc:"公司上市。", ageIncrease:19, options:[
+        { text:"投身慈善", effects:{morality:5, happiness:4}, next:"older_philanthropist" },
+        { text:"享受奢华", effects:{happiness:3, wealth:4, morality:-2}, next:"older_luxury" }
+      ]},
+      "middle_doctor_noble": { stage:"中年", desc:"无国界医生。", ageIncrease:19, options:[
+        { text:"继续前线", effects:{morality:6, health:-2}, next:"older_humanitarian" },
+        { text:"回国从政", effects:{wealth:4, intelligence:3}, next:"older_official" }
+      ]},
+      "middle_doctor_city": { stage:"中年", desc:"主任医师。", ageIncrease:19, options:[
+        { text:"专注研究", effects:{intelligence:4}, next:"older_senior_doctor" },
+        { text:"私人诊所", effects:{wealth:6}, next:"older_clinic_owner" }
+      ]},
+      "middle_writer_pure": { stage:"中年", desc:"文学奖，依旧清贫。", ageIncrease:19, options:[
+        { text:"接受清贫", effects:{happiness:5, morality:2}, next:"older_pure_artist" },
+        { text:"转向教育", effects:{wealth:3, charm:2}, next:"older_teacher" }
+      ]},
+      "middle_writer_commercial": { stage:"中年", desc:"知名编剧。", ageIncrease:19, options:[
+        { text:"继续创作IP", effects:{wealth:6}, next:"older_rich_writer" },
+        { text:"尝试导演", effects:{charm:4, intelligence:2}, next:"older_director" }
+      ]},
+      "middle_artist_pure": { stage:"中年", desc:"小众大师。", ageIncrease:19, options:[
+        { text:"隐居创作", effects:{happiness:4}, next:"older_hermit_artist" },
+        { text:"开班教学", effects:{charm:3, wealth:2}, next:"older_art_teacher" }
+      ]},
+      "middle_artist_commercial": { stage:"中年", desc:"名利双收。", ageIncrease:19, options:[
+        { text:"拓展衍生品", effects:{wealth:6}, next:"older_art_tycoon" },
+        { text:"回归初心", effects:{happiness:4, morality:2}, next:"older_balanced_artist" }
+      ]},
+      "middle_designer": { stage:"中年", desc:"设计总监。", ageIncrease:19, options:[
+        { text:"创办工作室", effects:{wealth:5, happiness:3}, next:"older_studio_owner" },
+        { text:"跨界时尚", effects:{charm:4, wealth:3}, next:"older_fashion" }
+      ]},
+      "middle_manager": { stage:"中年", desc:"管理压力大。", ageIncrease:19, options:[
+        { text:"跳槽当CEO", effects:{wealth:6, happiness:2}, next:"older_ceo" },
+        { text:"辞职追生活", effects:{happiness:5, wealth:-3}, next:"older_simple_life" }
+      ]},
+      "middle_biz_boom": { stage:"中年", desc:"生意越做越大。", ageIncrease:19, options:[
+        { text:"上市圈钱", effects:{wealth:10, morality:-2}, next:"older_tycoon" },
+        { text:"保守经营", effects:{wealth:4, health:2}, next:"older_comfort" }
+      ]},
+      "middle_biz_stable": { stage:"中年", desc:"稳健发展。", ageIncrease:19, options:[
+        { text:"培养接班人", effects:{morality:3, happiness:2}, next:"older_mentor" },
+        { text:"拓展新业务", effects:{wealth:4, intelligence:2}, next:"older_expand" }
+      ]},
+      "middle_athlete_hurt": { stage:"中年", desc:"因伤退役。", ageIncrease:19, options:[
+        { text:"转型解说", effects:{charm:4}, next:"older_commentator" },
+        { text:"开健身房", effects:{wealth:3, health:3}, next:"older_gym_owner" }
+      ]},
+      "middle_retire_early": { stage:"中年", desc:"早早退役。", ageIncrease:19, options:[
+        { text:"体育管理", effects:{wealth:3, intelligence:2}, next:"older_sports_admin" },
+        { text:"体育老师", effects:{happiness:3, morality:2}, next:"older_teacher_sports" }
+      ]},
+      "middle_coach": { stage:"中年", desc:"桃李满天下。", ageIncrease:19, options:[
+        { text:"继续育人", effects:{morality:3, happiness:2}, next:"older_beloved_coach" },
+        { text:"写训练著作", effects:{intelligence:3, wealth:2}, next:"older_famous_coach" }
+      ]},
+      "middle_coach_pro": { stage:"中年", desc:"带队夺冠。", ageIncrease:19, options:[
+        { text:"继续执教", effects:{wealth:3, charm:2}, next:"older_famous_coach" },
+        { text:"转向管理", effects:{wealth:4, intelligence:2}, next:"older_sports_admin" }
+      ]},
+      "middle_worker_skilled": { stage:"中年", desc:"高级技师。", ageIncrease:19, options:[
+        { text:"传授技艺", effects:{morality:3, happiness:2}, next:"older_master_craftsman" },
+        { text:"开维修店", effects:{wealth:4, health:1}, next:"older_shopkeeper" }
+      ]},
+      "middle_shop": { stage:"中年", desc:"小店红火。", ageIncrease:19, options:[
+        { text:"扩张连锁", effects:{wealth:5, health:-1}, next:"older_shopkeeper" },
+        { text:"保持现状", effects:{happiness:4, morality:1}, next:"older_comfort" }
+      ]},
+      "middle_sales_manager": { stage:"中年", desc:"高管位置。", ageIncrease:19, options:[
+        { text:"继续高薪", effects:{wealth:7, happiness:-1}, next:"older_executive" },
+        { text:"退休享受", effects:{happiness:5, wealth:-2}, next:"older_simple_life" }
+      ]},
+      "middle_loyal": { stage:"中年", desc:"财务自由。", ageIncrease:19, options:[
+        { text:"投资理财", effects:{wealth:6, intelligence:2}, next:"older_loyal_rich" },
+        { text:"旅游世界", effects:{happiness:5, charm:2}, next:"older_good_life" }
+      ]},
+
+      // ========== 中老年事件全部改为带选项，故事更丰满 ==========
+      "older_balance": { stage:"中老年 (51-65岁)", desc:"你注重养生与家庭，但心中仍有未竟的梦想。", ageIncrease:14, options:[
+        { text:"环游世界", effects:{happiness:5, charm:2, wealth:-2}, next:"older_travel_story" },
+        { text:"写回忆录", effects:{intelligence:3, morality:2}, next:"older_memoir_story" }
+      ]},
+      "older_rich_health_low": { stage:"中老年", desc:"财富无数，健康却每况愈下。", ageIncrease:14, options:[
+        { text:"寻求顶级医疗", effects:{wealth:-4, health:3}, next:"older_medical_struggle" },
+        { text:"坦然面对，立遗嘱", effects:{morality:3, happiness:2}, next:"ending_rich_but_sick" }
+      ]},
+      "older_philanthropist": { stage:"中老年", desc:"慈善事业占据了你大部分时间。", ageIncrease:14, options:[
+        { text:"建立基金会", effects:{wealth:-3, morality:5}, next:"ending_philanthropist" },
+        { text:"亲自一线救助", effects:{health:-2, happiness:4}, next:"ending_humanitarian" }
+      ]},
+      "older_luxury": { stage:"中老年", desc:"奢华派对夜夜笙歌，但孤独感悄然滋生。", ageIncrease:14, options:[
+        { text:"寻找真爱", effects:{charm:2, happiness:3}, next:"older_late_love" },
+        { text:"继续沉沦", effects:{wealth:-3, health:-2}, next:"ending_luxury_empty" }
+      ]},
+      "older_humanitarian": { stage:"中老年", desc:"你被提名国际和平奖。", ageIncrease:14, options:[
+        { text:"继续奉献", effects:{morality:4, health:-2}, next:"ending_humanitarian" },
+        { text:"退居幕后写作", effects:{intelligence:3, wealth:2}, next:"ending_official" }
+      ]},
+      "older_official": { stage:"中老年", desc:"卫生部门官员，推动改革遇阻。", ageIncrease:14, options:[
+        { text:"坚持改革", effects:{morality:3, wealth:-1}, next:"ending_official" },
+        { text:"妥协平衡", effects:{wealth:3, happiness:2}, next:"ending_senior_doctor" }
+      ]},
+      "older_senior_doctor": { stage:"中老年", desc:"学术泰斗，但身体透支。", ageIncrease:14, options:[
+        { text:"减少手术，专注教学", effects:{health:3, morality:3}, next:"ending_teacher" },
+        { text:"继续钻研", effects:{intelligence:4, health:-2}, next:"ending_senior_doctor" }
+      ]},
+      "older_clinic_owner": { stage:"中老年", desc:"诊所口碑极佳，成为社区支柱。", ageIncrease:14, options:[
+        { text:"扩大诊所", effects:{wealth:5, health:-2}, next:"ending_clinic_owner" },
+        { text:"半退休状态", effects:{happiness:4, health:2}, next:"ending_comfort" }
+      ]},
+      "older_pure_artist": { stage:"中老年", desc:"清贫但灵魂自由，作品终获认可。", ageIncrease:14, options:[
+        { text:"捐赠作品", effects:{morality:4, wealth:-2}, next:"ending_pure_artist" },
+        { text:"继续创作", effects:{happiness:3, intelligence:2}, next:"ending_hermit" }
+      ]},
+      "older_teacher": { stage:"中老年", desc:"桃李芬芳，深受爱戴。", ageIncrease:14, options:[
+        { text:"著书立说", effects:{intelligence:4, wealth:2}, next:"ending_teacher" },
+        { text:"专注慈善教育", effects:{morality:4, happiness:2}, next:"ending_mentor" }
+      ]},
+      "older_rich_writer": { stage:"中老年", desc:"畅销书作家，名利双收。", ageIncrease:14, options:[
+        { text:"投资影视", effects:{wealth:5, charm:2}, next:"ending_rich_writer" },
+        { text:"隐居写作", effects:{happiness:4, intelligence:2}, next:"ending_director" }
+      ]},
+      "older_director": { stage:"中老年", desc:"电影入围大奖。", ageIncrease:14, options:[
+        { text:"冲击国际奖项", effects:{charm:4, happiness:2}, next:"ending_director" },
+        { text:"培养新人", effects:{morality:3, wealth:2}, next:"ending_mentor" }
+      ]},
+      "older_hermit_artist": { stage:"中老年", desc:"隐居山林，灵感如泉涌。", ageIncrease:14, options:[
+        { text:"完成传世巨作", effects:{intelligence:4, happiness:3}, next:"ending_hermit" },
+        { text:"回归社会办展", effects:{wealth:3, charm:3}, next:"ending_art_teacher" }
+      ]},
+      "older_art_teacher": { stage:"中老年", desc:"学生中涌现多位新星。", ageIncrease:14, options:[
+        { text:"开办艺术学校", effects:{wealth:4, morality:3}, next:"ending_art_teacher" },
+        { text:"专注自身创作", effects:{happiness:4, intelligence:2}, next:"ending_balanced_artist" }
+      ]},
+      "older_art_tycoon": { stage:"中老年", desc:"艺术商业帝国掌门人。", ageIncrease:14, options:[
+        { text:"垄断市场", effects:{wealth:8, morality:-2}, next:"ending_art_tycoon" },
+        { text:"支持公益艺术", effects:{morality:5, wealth:-2}, next:"ending_philanthropist" }
+      ]},
+      "older_balanced_artist": { stage:"中老年", desc:"商业与艺术完美平衡。", ageIncrease:14, options:[
+        { text:"拓展海外市场", effects:{wealth:5, charm:2}, next:"ending_balanced_artist" },
+        { text:"回归本真", effects:{happiness:5, intelligence:2}, next:"ending_pure_artist" }
+      ]},
+      "older_studio_owner": { stage:"中老年", desc:"设计工作室享誉业界。", ageIncrease:14, options:[
+        { text:"跨界建筑", effects:{wealth:5, intelligence:3}, next:"ending_design_studio" },
+        { text:"转向教育", effects:{morality:3, happiness:2}, next:"ending_teacher" }
+      ]},
+      "older_fashion": { stage:"中老年", desc:"时尚偶像。", ageIncrease:14, options:[
+        { text:"创立个人品牌", effects:{wealth:6, charm:2}, next:"ending_fashion_icon" },
+        { text:"淡出时尚圈", effects:{happiness:5, health:2}, next:"ending_simple_life" }
+      ]},
+      "older_ceo": { stage:"中老年", desc:"公司上市，功成身退。", ageIncrease:14, options:[
+        { text:"天使投资", effects:{wealth:5, intelligence:2}, next:"ending_ceo" },
+        { text:"彻底退休", effects:{happiness:5, health:3}, next:"ending_executive" }
+      ]},
+      "older_simple_life": { stage:"中老年", desc:"回归田园，内心宁静。", ageIncrease:14, options:[
+        { text:"写作记录生活", effects:{intelligence:3, happiness:2}, next:"ending_simple_life" },
+        { text:"帮助乡亲", effects:{morality:4, wealth:-1}, next:"ending_teacher_sports" }
+      ]},
+      "older_tycoon": { stage:"中老年", desc:"亿万富豪，家庭疏离。", ageIncrease:14, options:[
+        { text:"试图弥补亲情", effects:{charm:2, happiness:3}, next:"older_reconcile" },
+        { text:"继续扩张商业", effects:{wealth:6, morality:-2}, next:"ending_tycoon" }
+      ]},
+      "older_comfort": { stage:"中老年", desc:"富足安稳，家庭和睦。", ageIncrease:14, options:[
+        { text:"享受天伦之乐", effects:{happiness:5, health:2}, next:"ending_comfort" },
+        { text:"资助子孙创业", effects:{wealth:-3, morality:3}, next:"ending_mentor" }
+      ]},
+      "older_mentor": { stage:"中老年", desc:"青年创业者导师。", ageIncrease:14, options:[
+        { text:"成立创业基金", effects:{wealth:-3, morality:5}, next:"ending_mentor" },
+        { text:"享受退休生活", effects:{happiness:5, charm:2}, next:"ending_executive" }
+      ]},
+      "older_expand": { stage:"中老年", desc:"新业务成功，事业第二春。", ageIncrease:14, options:[
+        { text:"激进扩张", effects:{wealth:6, health:-2}, next:"ending_expand" },
+        { text:"稳步前行", effects:{happiness:4, morality:2}, next:"ending_comfort" }
+      ]},
+      "older_commentator": { stage:"中老年", desc:"著名体育评论员。", ageIncrease:14, options:[
+        { text:"继续解说", effects:{charm:4, wealth:2}, next:"ending_commentator" },
+        { text:"转型教练", effects:{morality:3, health:2}, next:"ending_beloved_coach" }
+      ]},
+      "older_gym_owner": { stage:"中老年", desc:"健身品牌创始人。", ageIncrease:14, options:[
+        { text:"推广健身理念", effects:{health:3, morality:4}, next:"ending_gym_owner" },
+        { text:"上市融资", effects:{wealth:6, health:-1}, next:"ending_executive" }
+      ]},
+      "older_sports_admin": { stage:"中老年", desc:"体育局任职，推动运动普及。", ageIncrease:14, options:[
+        { text:"争取举办赛事", effects:{charm:4, wealth:2}, next:"ending_sports_admin" },
+        { text:"回归校园", effects:{happiness:4, morality:3}, next:"ending_teacher_sports" }
+      ]},
+      "older_teacher_sports": { stage:"中老年", desc:"体育老师，孩子心中的光。", ageIncrease:14, options:[
+        { text:"继续执教", effects:{morality:5, happiness:3}, next:"ending_teacher_sports" },
+        { text:"编写教材", effects:{intelligence:4, wealth:2}, next:"ending_teacher" }
+      ]},
+      "older_beloved_coach": { stage:"中老年", desc:"德高望重，安享晚年。", ageIncrease:14, options:[
+        { text:"写自传", effects:{intelligence:3, wealth:2}, next:"ending_beloved_coach" },
+        { text:"享受家庭", effects:{happiness:5, health:3}, next:"ending_comfort" }
+      ]},
+      "older_famous_coach": { stage:"中老年", desc:"冠军教头，写入史册。", ageIncrease:14, options:[
+        { text:"继续执教", effects:{wealth:3, charm:2}, next:"ending_famous_coach" },
+        { text:"退休解说", effects:{wealth:2, happiness:3}, next:"ending_commentator" }
+      ]},
+      "older_master_craftsman": { stage:"中老年", desc:"技艺传承人。", ageIncrease:14, options:[
+        { text:"收徒传艺", effects:{morality:5, happiness:2}, next:"ending_craftsman" },
+        { text:"创新工艺", effects:{intelligence:4, wealth:3}, next:"ending_expand" }
+      ]},
+      "older_shopkeeper": { stage:"中老年", desc:"小店成街坊传奇。", ageIncrease:14, options:[
+        { text:"坚守小店", effects:{happiness:5, morality:3}, next:"ending_shopkeeper" },
+        { text:"交给下一代", effects:{wealth:2, happiness:4}, next:"ending_comfort" }
+      ]},
+      "older_executive": { stage:"中老年", desc:"退休生活丰富多彩。", ageIncrease:14, options:[
+        { text:"环游世界", effects:{happiness:5, wealth:-2}, next:"ending_executive" },
+        { text:"写商业回忆录", effects:{intelligence:4, wealth:3}, next:"ending_ceo" }
+      ]},
+      "older_loyal_rich": { stage:"中老年", desc:"忠诚换来回报，晚年安逸。", ageIncrease:14, options:[
+        { text:"投资慈善", effects:{morality:5, wealth:-2}, next:"ending_philanthropist" },
+        { text:"享受奢华", effects:{happiness:4, wealth:2}, next:"ending_luxury_empty" }
+      ]},
+      // 额外新增的中老年故事节点
+      "older_travel_story": { stage:"中老年", desc:"环游世界途中，你遇到一位志同道合的旅伴。", ageIncrease:5, options:[
+        { text:"一起探险", effects:{happiness:4, health:2}, next:"ending_good_life" },
+        { text:"记录见闻出书", effects:{intelligence:3, wealth:3}, next:"ending_rich_writer" }
+      ]},
+      "older_memoir_story": { stage:"中老年", desc:"回忆录引发社会关注，出版社邀约不断。", ageIncrease:5, options:[
+        { text:"继续创作", effects:{wealth:4, intelligence:2}, next:"ending_teacher" },
+        { text:"享受名利", effects:{happiness:3, charm:3}, next:"ending_rich_writer" }
+      ]},
+      "older_medical_struggle": { stage:"中老年", desc:"顶级医疗让你病情稳定，但费用高昂。", ageIncrease:5, options:[
+        { text:"继续治疗", effects:{wealth:-3, health:2}, next:"ending_rich_but_sick" },
+        { text:"放弃治疗，环游世界", effects:{happiness:5, health:-3}, next:"ending_good_life" }
+      ]},
+      "older_late_love": { stage:"中老年", desc:"你遇到了黄昏恋，对方温柔体贴。", ageIncrease:5, options:[
+        { text:"勇敢再婚", effects:{happiness:5, charm:2}, next:"ending_comfort" },
+        { text:"保持伴侣关系", effects:{happiness:4, morality:1}, next:"ending_good_life" }
+      ]},
+      "older_reconcile": { stage:"中老年", desc:"你努力修复与家人的关系。", ageIncrease:5, options:[
+        { text:"成功和解", effects:{happiness:6, morality:3}, next:"ending_comfort" },
+        { text:"裂痕仍在", effects:{wealth:-2, happiness:-2}, next:"ending_tycoon" }
+      ]},
+      "older_good_life": { stage:"中老年", desc:"岁月静好，你感到前所未有的满足。", ageIncrease:5, nextEvent:"ending_good_life" },
+
+      // 结局事件
+      "ending_good_life": { stage:"结局", desc:"你拥有平衡美满的一生，财富与健康兼得，家庭幸福。", final:true },
+      "ending_rich_but_sick": { stage:"结局", desc:"财富无数，健康却早早离去，令人唏嘘。", final:true },
+      "ending_philanthropist": { stage:"结局", desc:"慈善改变无数人命运，被世人铭记。", final:true },
+      "ending_luxury_empty": { stage:"结局", desc:"物质极度丰富，内心荒芜，晚年孤独。", final:true },
+      "ending_humanitarian": { stage:"结局", desc:"为人类和平奋斗终生，伟大而无私。", final:true },
+      "ending_official": { stage:"结局", desc:"在体制内推动重要改革，功过留与后人说。", final:true },
+      "ending_senior_doctor": { stage:"结局", desc:"医学泰斗，救死扶伤一生。", final:true },
+      "ending_clinic_owner": { stage:"结局", desc:"诊所成城市地标，生活优渥。", final:true },
+      "ending_pure_artist": { stage:"结局", desc:"一生清贫，灵魂自由，作品永世流传。", final:true },
+      "ending_teacher": { stage:"结局", desc:"桃李满天下，思想在学生们身上延续。", final:true },
+      "ending_rich_writer": { stage:"结局", desc:"畅销天下，财富与才华并存。", final:true },
+      "ending_director": { stage:"结局", desc:"电影打动人心，成为文化符号。", final:true },
+      "ending_hermit": { stage:"结局", desc:"远离尘嚣，悟透人生真谛。", final:true },
+      "ending_art_teacher": { stage:"结局", desc:"培养多位艺术新星，桃李芬芳。", final:true },
+      "ending_art_tycoon": { stage:"结局", desc:"艺术帝国掌门人，影响力巨大。", final:true },
+      "ending_balanced_artist": { stage:"结局", desc:"商业与艺术完美平衡，内心充实。", final:true },
+      "ending_design_studio": { stage:"结局", desc:"设计界传奇，影响时代审美。", final:true },
+      "ending_fashion_icon": { stage:"结局", desc:"时尚偶像，引领潮流。", final:true },
+      "ending_ceo": { stage:"结局", desc:"商界领袖，退休后为天使投资人。", final:true },
+      "ending_simple_life": { stage:"结局", desc:"回归田园，内心平静富足。", final:true },
+      "ending_tycoon": { stage:"结局", desc:"亿万富豪，孤独终老。", final:true },
+      "ending_comfort": { stage:"结局", desc:"富足安稳，与爱人白头偕老。", final:true },
+      "ending_mentor": { stage:"结局", desc:"指点无数创业者，智慧传承后世。", final:true },
+      "ending_expand": { stage:"结局", desc:"事业二次腾飞，越活越精彩。", final:true },
+      "ending_commentator": { stage:"结局", desc:"你的声音陪伴一代体育迷。", final:true },
+      "ending_gym_owner": { stage:"结局", desc:"健身品牌遍布全国，倡导健康生活。", final:true },
+      "ending_sports_admin": { stage:"结局", desc:"推动大众体育，政绩斐然。", final:true },
+      "ending_teacher_sports": { stage:"结局", desc:"平凡岗位上的伟大教师。", final:true },
+      "ending_beloved_coach": { stage:"结局", desc:"德高望重，师徒情深。", final:true },
+      "ending_famous_coach": { stage:"结局", desc:"冠军教头，名垂青史。", final:true },
+      "ending_craftsman": { stage:"结局", desc:"手艺传承人，堪称大师。", final:true },
+      "ending_shopkeeper": { stage:"结局", desc:"小店温暖了无数人。", final:true },
+      "ending_executive": { stage:"结局", desc:"退休生活丰富多彩，周游世界。", final:true },
+      "ending_loyal_rich": { stage:"结局", desc:"忠诚与坚持换来巨大回报。", final:true }
+    };
+
+    // 辅助函数
+    function resolveNext(next) { return typeof next === 'function' ? next() : next; }
+    function applyEffects(effects) {
+      for (let k in effects) {
+        if (state.attr.hasOwnProperty(k)) {
+          state.attr[k] += effects[k];
+          if (state.attr[k] < 0) state.attr[k] = 0;
+          if (state.attr[k] > 100) state.attr[k] = 100;
+        }
+      }
+    }
+    function getBarColor(v) { return v<30 ? '#c47b6b' : v<60 ? '#d4a853' : '#7fa07a'; }
+    function getRandomTalents(n=3) { return [...talents].sort(()=>Math.random()-0.5).slice(0,n); }
+    function setBodyClass(stage) {
+      body.className = '';
+      if (stage.includes('婴幼')) body.classList.add('infant');
+      else if (stage.includes('童年')) body.classList.add('childhood');
+      else if (stage.includes('青春')) body.classList.add('teen');
+      else if (stage.includes('青年早期')) body.classList.add('young_adult');
+      else if (stage.includes('青年')) body.classList.add('adult');
+      else if (stage.includes('中年')) body.classList.add('middle_age');
+      else if (stage.includes('中老年')) body.classList.add('older');
+      else if (stage.includes('老年')||stage.includes('结局')) body.classList.add('elder');
+      else if (stage.includes('命运')) body.classList.add('infant');
+    }
+    function saveGame() {
+      localStorage.setItem('lifeSim', JSON.stringify({
+        age:state.age, stage:state.stage, talent:state.talent,
+        attr:state.attr, eventId:state.eventId, flags:state.flags, pendingNext:state.pendingNext
+      }));
+      alert('游戏已保存！');
+    }
+    function loadGame() {
+      const s = localStorage.getItem('lifeSim');
+      if (!s) { alert('无存档'); return false; }
+      try {
+        const d = JSON.parse(s);
+        Object.assign(state, d); return true;
+      } catch { alert('存档损坏'); return false; }
+    }
+    function triggerRandomEvent() {
+      return Math.random() < (state.talent?.flag==='lucky' ? 0.35 : 0.2);
+    }
+    function getRandomEventId() {
+      return randomEvents[Math.floor(Math.random()*randomEvents.length)].id;
+    }
+
+    // 渲染
+    const app = document.getElementById('app');
+    function renderAttributes() {
+      return Object.entries(state.attr).map(([k,v]) => `
+        <div class="attr-item"><div class="attr-label">${attrIcons[k]} ${attrNames[k]}</div>
+        <div class="attr-bar"><div class="attr-fill" style="width:${v}%; background:${getBarColor(v)}"></div></div>
+        <div class="attr-value">${v}</div></div>`).join('');
+    }
+    function buildHeader() {
+      return `<div class="header"><div class="identity"><div class="avatar">🧑</div><div class="name-age"><span class="char-name">${state.name}</span><span class="age-stage">🎂 ${state.age}岁 · ${state.stage}</span></div></div>${state.talent?`<div class="talent-badge">${state.talent.icon} ${state.talent.name}</div>`:''}</div>`;
+    }
+
+    function renderTalentSelection() {
+      const cards = getRandomTalents().map(t => `<div class="talent-card" data-talent-id="${t.id}"><div class="talent-icon">${t.icon}</div><div class="talent-name">${t.name}</div><div class="talent-desc">${t.desc}</div></div>`).join('');
+      app.innerHTML = `<div class="save-bar"><button class="load-btn" id="loadBtn">📂 读档</button></div><div class="talent-selection story-card"><div class="talent-title">🌟 命运赐福</div><p>选择一项与生俱来的天赋</p><div class="talent-cards">${cards}</div></div>`;
+      document.querySelectorAll('.talent-card').forEach(c=>c.addEventListener('click', function(){ selectTalent(this.dataset.talentId); }));
+      document.getElementById('loadBtn').addEventListener('click', ()=>{ if(loadGame()) renderGame(); });
+    }
+
+    function selectTalent(id) {
+      const t = talents.find(t=>t.id===id);
+      if(!t) return alert('错误，请刷新');
+      state.talent = t;
+      if(t.effects) applyEffects(t.effects);
+      state.eventId = "infant_start";
+      state.age = 0;
+      state.stage = "婴幼期 (0-6岁)";
+      renderGame();
+    }
+
+    function renderGame() {
+      if (state.eventId === 'talent_select') return renderTalentSelection();
+
+      const randomEvent = randomEvents.find(r=>r.id===state.eventId);
+      if (randomEvent) {
+        state.stage = randomEvent.stage;
+        state.age += randomEvent.ageIncrease||0;
+        setBodyClass(state.stage);
+        app.innerHTML = `<div class="save-bar"><button class="save-btn" id="saveBtn">💾 保存</button><button class="load-btn" id="loadBtn">📂 读档</button></div>${buildHeader()}<div class="attributes">${renderAttributes()}</div><div class="story-card" style="border:2px solid #d4af37;"><div class="stage-tag">✨ 偶然事件</div><div class="narrative">${randomEvent.desc}</div><button class="option-btn" id="continueRandomBtn">🔹 继续</button></div>`;
+        document.getElementById('saveBtn').addEventListener('click', saveGame);
+        document.getElementById('loadBtn').addEventListener('click', ()=>{ if(loadGame()) renderGame(); });
+        document.getElementById('continueRandomBtn').addEventListener('click', continueRandom);
+        return;
+      }
+
+      const event = events[state.eventId];
+      if (!event) return;
+      if (event.final) {
+        setBodyClass('ending-bg');
+        const attrSum = Object.entries(state.attr).map(([k,v])=>`<span>${attrIcons[k]} ${attrNames[k]}: ${v}</span>`).join(' ');
+        app.innerHTML = `<div class="story-card ending-panel" style="background:rgba(30,25,20,0.85);color:#f0e3c8;"><div class="ending-title">🎭 ${event.stage}</div><div class="ending-summary">${event.desc}</div><div class="final-attributes">${attrSum}</div><p>天赋：${state.talent?.icon} ${state.talent?.name}</p><button class="restart-btn" id="restartBtn">🔄 重新开始</button></div>`;
+        document.getElementById('restartBtn').addEventListener('click', restartGame);
+        return;
+      }
+
+      if (event.nextEvent && !event.options) {
+        state.age += event.ageIncrease||0;
+        state.eventId = event.nextEvent;
+        const n = events[event.nextEvent];
+        if(n?.stage) state.stage = n.stage;
+        renderGame();
+        return;
+      }
+
+      if (event.options) {
+        state.stage = event.stage||state.stage;
+        setBodyClass(state.stage);
+        const opts = event.options.map((o,i)=>`<div class="option-btn" data-opt="${i}"><span class="option-icon">${['🔹','🔸','🔷','🔶'][i%4]}</span> ${o.text}</div>`).join('');
+        app.innerHTML = `<div class="save-bar"><button class="save-btn" id="saveBtn">💾 保存</button><button class="load-btn" id="loadBtn">📂 读档</button></div>${buildHeader()}<div class="attributes">${renderAttributes()}</div><div class="story-card"><div class="stage-tag">📌 ${state.stage}</div><div class="narrative">${event.desc}</div><div class="options">${opts}</div></div>`;
+        document.getElementById('saveBtn').addEventListener('click', saveGame);
+        document.getElementById('loadBtn').addEventListener('click', ()=>{ if(loadGame()) renderGame(); });
+        document.querySelectorAll('.option-btn').forEach(b=>b.addEventListener('click', function(){ makeChoice(parseInt(this.dataset.opt)); }));
+      }
+    }
+
+    function makeChoice(idx) {
+      const event = events[state.eventId];
+      if(!event?.options) return;
+      const chosen = event.options[idx];
+      if(event.ageIncrease) state.age += event.ageIncrease;
+      if(chosen.effects) applyEffects(chosen.effects);
+      let nextId = resolveNext(chosen.next);
+      if(!events[nextId]) return;
+      if(!events[nextId].final && triggerRandomEvent()) {
+        state.pendingNext = nextId;
+        nextId = getRandomEventId();
+      }
+      state.eventId = nextId;
+      const n = events[nextId];
+      if(n?.stage) state.stage = n.stage;
+      renderGame();
+    }
+
+    function continueRandom() {
+      const re = randomEvents.find(r=>r.id===state.eventId);
+      if(re?.effects) applyEffects(re.effects);
+      const nid = state.pendingNext;
+      state.pendingNext = null;
+      if(nid && events[nid]) {
+        state.eventId = nid;
+        const n = events[nid];
+        if(n?.stage) state.stage = n.stage;
+      }
+      renderGame();
+    }
+
+    function restartGame() {
+      Object.assign(state, {
+        age:0, stage:"命运之初", talent:null,
+        attr:{intelligence:20,charm:20,wealth:20,health:30,happiness:30,morality:25},
+        eventId:"talent_select", flags:{}, pendingNext:null
+      });
+      localStorage.removeItem('lifeSim');
+      renderGame();
+    }
+
+    renderGame();
+  })();
+</script>
+</body>
+</html>
